@@ -14,6 +14,7 @@ import TextInput from "../vendor/ink-text-input.js";
 import { Box, Text, useApp, useInput, useStdin } from "ink";
 import { fileURLToPath } from "node:url";
 import React, { useCallback, useState, Fragment } from "react";
+import { getSuggestions } from "src/utils/suggestions.js";
 import { useInterval } from "use-interval";
 
 const suggestions = [
@@ -62,6 +63,8 @@ export default function TerminalChatInput({
   const [history, setHistory] = useState<Array<string>>([]);
   const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   const [draftInput, setDraftInput] = useState<string>("");
+  const [tabCompletions, setTabCompletions] = useState<Array<string>>([]);
+  const [selectedCompletion, setSelectedCompletion] = useState<number>(-1);
 
   useInput(
     (_input, _key) => {
@@ -98,6 +101,15 @@ export default function TerminalChatInput({
             setInput(history[newIndex] ?? "");
           }
           return;
+        }
+
+
+        if (_key.tab) {
+          const words = input.trim().split(/\s+/);
+          const mostRecentWord = words.length > 0 ? words[words.length - 1] : "";
+          if (mostRecentWord !== undefined) {
+            setTabCompletions(getSuggestions(mostRecentWord))
+          }
         }
       }
 
@@ -210,6 +222,7 @@ export default function TerminalChatInput({
       setDraftInput("");
       setSelectedSuggestion(0);
       setInput("");
+      setTabCompletions([]);
     },
     [
       setInput,
@@ -251,7 +264,7 @@ export default function TerminalChatInput({
                 selectedSuggestion
                   ? `"${suggestions[selectedSuggestion - 1]}"`
                   : "send a message" +
-                    (isNew ? " or press tab to select a suggestion" : "")
+                  (isNew ? " or press tab to select a suggestion" : "")
               }
               showCursor
               value={input}
@@ -261,6 +274,18 @@ export default function TerminalChatInput({
                   setHistoryIndex(null);
                 }
                 setInput(value);
+
+                // Clear tab completions if a space is typed
+                if (value.endsWith(' ')) {
+                  setTabCompletions([]);
+                } else if (tabCompletions.length > 0) {
+                  // Update suggestions as user types
+                  const words = value.trim().split(/\s+/);
+                  const mostRecentWord = words.length > 0 ? words[words.length - 1] : "";
+                  if (mostRecentWord !== undefined) {
+                    setTabCompletions(getSuggestions(mostRecentWord));
+                  }
+                }
               }}
               onSubmit={onSubmit}
             />
@@ -268,38 +293,49 @@ export default function TerminalChatInput({
         )}
       </Box>
       <Box paddingX={2} marginBottom={1}>
-        <Text dimColor>
-          {isNew && !input ? (
-            <>
-              try:{" "}
-              {suggestions.map((m, key) => (
-                <Fragment key={key}>
-                  {key !== 0 ? " | " : ""}
-                  <Text
-                    backgroundColor={
-                      key + 1 === selectedSuggestion ? "blackBright" : ""
-                    }
-                  >
-                    {m}
+        {isNew && !input ? (
+          <Text dimColor>
+            try:{" "}
+            {suggestions.map((m, key) => (
+              <Fragment key={key}>
+                {key !== 0 ? " | " : ""}
+                <Text
+                  backgroundColor={
+                    key + 1 === selectedSuggestion ? "blackBright" : ""
+                  }
+                >
+                  {m}
+                </Text>
+              </Fragment>
+            ))}
+          </Text>
+        ) : (
+          <>
+            {tabCompletions?.length > 0 ? (
+              <Box flexDirection="column">
+                {tabCompletions.map((completion) => (
+                  <Text key={completion} dimColor>
+                    {completion}
                   </Text>
-                </Fragment>
-              ))}
-            </>
-          ) : (
-            <>
-              send q or ctrl+c to exit | send "/clear" to reset | send "/help"
-              for commands | press enter to send
-              {contextLeftPercent < 25 && (
-                <>
-                  {" — "}
-                  <Text color="red">
-                    {Math.round(contextLeftPercent)}% context left
-                  </Text>
-                </>
-              )}
-            </>
-          )}
-        </Text>
+                ))}
+              </Box>
+            ) : (
+              // Default help text
+              <Text dimColor>
+                send q or ctrl+c to exit | send "/clear" to reset | send "/help"
+                for commands | press enter to send
+                {contextLeftPercent < 25 && (
+                  <>
+                    {" — "}
+                    <Text color="red">
+                      {Math.round(contextLeftPercent)}% context left
+                    </Text>
+                  </>
+                )}
+              </Text>
+            )}
+          </>
+        )}
       </Box>
     </Box>
   );
