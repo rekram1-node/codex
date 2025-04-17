@@ -3,41 +3,39 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
+
 export function getSuggestions(pathPrefix: string): Array<string> {
+  if (!pathPrefix) {
+    return [];
+  }
+
   try {
-    const isDir = pathPrefix.endsWith("/");
-    const normalizedPath = pathPrefix.startsWith("~/")
-      ? path.join(os.homedir(), pathPrefix.slice(2))
-      : path.normalize(pathPrefix);
-    const baseName = path.basename(normalizedPath);
+    const sep = path.sep;
+    const hasTilde = pathPrefix === "~" || pathPrefix.startsWith("~" + sep);
+    const expanded = hasTilde
+      ? path.join(os.homedir(), pathPrefix.slice(1))
+      : pathPrefix;
 
-    const effectiveDirPath =
-      // TODO: is this correct?
-      normalizedPath === "." &&
-        !pathPrefix.startsWith("./") &&
-        !pathPrefix.startsWith("~/")
+    const normalized = path.normalize(expanded);
+    const isDir = /[\\/]+$/.test(pathPrefix); // handles both "/" and "\\" suffixes
+    const base = path.basename(normalized);
+
+    const dir =
+      normalized === "." && !pathPrefix.startsWith("." + sep) && !hasTilde
         ? process.cwd()
-        : path.dirname(normalizedPath);
-    const directoryToRead = isDir
-      ? path.join(effectiveDirPath, baseName)
-      : effectiveDirPath;
+        : path.dirname(normalized);
 
-    const dirContents = fs.readdirSync(directoryToRead);
+    const readDir = isDir ? path.join(dir, base) : dir;
 
-    const suggestions = dirContents
-      .filter((item) => isDir || item.startsWith(baseName))
+    return fs
+      .readdirSync(readDir)
+      .filter((item) => isDir || item.startsWith(base))
       .map((item) => {
-        const fullPath = path.join(directoryToRead, item);
+        const fullPath = path.join(readDir, item);
         const isDirectory = fs.statSync(fullPath).isDirectory();
-        return shortenPath(`${fullPath}${isDirectory ? "/" : ""}`);
-      })
-      // TODO should we allow all and do scroll?
-      .slice(0, 5); // Limit to top 5 results
-
-    return suggestions;
-    // TODO remove error logging
-  } catch (error) {
-    console.error("Error getting suggestions:", error);
+        return shortenPath(fullPath + (isDirectory ? sep : ""));
+      });
+  } catch {
     return [];
   }
 }

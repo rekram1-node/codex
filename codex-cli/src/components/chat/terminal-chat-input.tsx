@@ -354,7 +354,7 @@ export default function TerminalChatInput({
           <>
             {tabCompletions?.length > 0 ? (
               <Box flexDirection="column">
-                {tabCompletions.map((completion, index) => (
+                {tabCompletions.slice(0, 5).map((completion, index) => (
                   <Text
                     key={completion}
                     dimColor={index !== selectedCompletion}
