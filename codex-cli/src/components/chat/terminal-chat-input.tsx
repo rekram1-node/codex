@@ -65,6 +65,7 @@ export default function TerminalChatInput({
   const [draftInput, setDraftInput] = useState<string>("");
   const [tabCompletions, setTabCompletions] = useState<Array<string>>([]);
   const [selectedCompletion, setSelectedCompletion] = useState<number>(-1);
+  const [forceCursorToEnd, setForceCursorToEnd] = useState<boolean>(false);
 
   useInput(
     (_input, _key) => {
@@ -96,6 +97,7 @@ export default function TerminalChatInput({
               setInput(words.join(' '));
               setTabCompletions([]);
               setSelectedCompletion(-1);
+              setForceCursorToEnd(true);
             }
             return;
           }
@@ -305,6 +307,7 @@ export default function TerminalChatInput({
               }
               showCursor
               value={input}
+              cursorToEnd={forceCursorToEnd}
               onChange={(value) => {
                 setDraftInput(value);
                 if (historyIndex != null) {

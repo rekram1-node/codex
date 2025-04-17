@@ -44,6 +44,11 @@ export type TextInputProps = {
    * Function to call when `Enter` is pressed, where first argument is a value of the input.
    */
   readonly onSubmit?: (value: string) => void;
+
+  /**
+   * Explicitly set the cursor position to the end of the text
+   */
+  readonly cursorToEnd?: boolean;
 };
 
 function findPrevWordJump(prompt: string, cursorOffset: number) {
@@ -90,22 +95,32 @@ function TextInput({
   showCursor = true,
   onChange,
   onSubmit,
+  cursorToEnd = false,
 }: TextInputProps) {
   const [state, setState] = useState({
     cursorOffset: (originalValue || "").length,
     cursorWidth: 0,
   });
 
+  useEffect(() => {
+    if (cursorToEnd) {
+      setState(prev => ({
+        ...prev,
+        cursorOffset: (originalValue || "").length,
+      }));
+    }
+  }, [cursorToEnd, originalValue, focus]);
+
   const { cursorOffset, cursorWidth } = state;
 
   useEffect(() => {
     setState((previousState) => {
       if (!focus || !showCursor) {
+        console.log("exiting")
         return previousState;
       }
 
       const newValue = originalValue || "";
-
       if (previousState.cursorOffset > newValue.length - 1) {
         return {
           cursorOffset: newValue.length,
