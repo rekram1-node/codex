@@ -85,7 +85,7 @@ export default function TerminalChatInput({
             return;
           }
 
-          // Apply the selected completion when Enter is pressed
+          // Apply the selected completion
           if ((_key.return || _key.tab) && selectedCompletion >= 0) {
             const words = input.trim().split(/\s+/);
             const selected = tabCompletions[selectedCompletion];
@@ -136,14 +136,15 @@ export default function TerminalChatInput({
 
 
         if (_key.tab) {
-          const words = input.trim().split(/\s+/);
-          const mostRecentWord = words.length > 0 ? words[words.length - 1] : "";
-          if (mostRecentWord !== undefined) {
-            const completions = getSuggestions(mostRecentWord);
-            setTabCompletions(completions);
-            if (completions.length > 0) {
-              setSelectedCompletion(0);
-            }
+          const words = input.split(/\s+/);
+          const mostRecentWord = words[words.length - 1];
+          if (mostRecentWord === undefined || mostRecentWord === "") {
+            return;
+          }
+          const completions = getSuggestions(mostRecentWord);
+          setTabCompletions(completions);
+          if (completions.length > 0) {
+            setSelectedCompletion(0);
           }
         }
       }
