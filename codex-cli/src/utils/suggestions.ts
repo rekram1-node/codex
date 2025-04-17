@@ -12,6 +12,7 @@ export function getSuggestions(pathPrefix: string): Array<string> {
     const baseName = path.basename(normalizedPath);
 
     const effectiveDirPath =
+      // TODO: is this correct?
       normalizedPath === "." &&
         !pathPrefix.startsWith("./") &&
         !pathPrefix.startsWith("~/")
@@ -30,6 +31,7 @@ export function getSuggestions(pathPrefix: string): Array<string> {
         const isDirectory = fs.statSync(fullPath).isDirectory();
         return shortenPath(`${item}${isDirectory ? "/" : ""}`);
       })
+      // TODO should we allow all and do scroll?
       .slice(0, 5); // Limit to top 5 results
 
     return suggestions;

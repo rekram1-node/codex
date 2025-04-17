@@ -69,7 +69,39 @@ export default function TerminalChatInput({
   useInput(
     (_input, _key) => {
       if (!confirmationPrompt && !loading) {
-        if (_key.upArrow) {
+        // Tab completions navigation takes precedence when tab completions are visible
+        if (tabCompletions.length > 0) {
+          if (_key.upArrow) {
+            setSelectedCompletion(prev =>
+              prev <= 0 ? tabCompletions.length - 1 : prev - 1
+            );
+            return;
+          }
+
+          if (_key.downArrow) {
+            setSelectedCompletion(prev =>
+              prev >= tabCompletions.length - 1 ? 0 : prev + 1
+            );
+            return;
+          }
+
+          // Apply the selected completion when Enter is pressed
+          if ((_key.return || _key.tab) && selectedCompletion >= 0) {
+            const words = input.trim().split(/\s+/);
+            const selected = tabCompletions[selectedCompletion];
+
+            if (words.length > 0 && selected) {
+              // Replace the last word with the selected completion
+              words[words.length - 1] = selected;
+              setInput(words.join(' '));
+              setTabCompletions([]);
+              setSelectedCompletion(-1);
+            }
+            return;
+          }
+        }
+        // History navigation when no tab completions are active
+        else if (_key.upArrow) {
           if (history.length > 0) {
             if (historyIndex == null) {
               setDraftInput(input);
@@ -86,8 +118,7 @@ export default function TerminalChatInput({
           }
           return;
         }
-
-        if (_key.downArrow) {
+        else if (_key.downArrow) {
           if (historyIndex == null) {
             return;
           }
@@ -108,7 +139,11 @@ export default function TerminalChatInput({
           const words = input.trim().split(/\s+/);
           const mostRecentWord = words.length > 0 ? words[words.length - 1] : "";
           if (mostRecentWord !== undefined) {
-            setTabCompletions(getSuggestions(mostRecentWord))
+            const completions = getSuggestions(mostRecentWord);
+            setTabCompletions(completions);
+            if (completions.length > 0) {
+              setSelectedCompletion(0);
+            }
           }
         }
       }
@@ -223,6 +258,7 @@ export default function TerminalChatInput({
       setSelectedSuggestion(0);
       setInput("");
       setTabCompletions([]);
+      setSelectedCompletion(-1);
     },
     [
       setInput,
@@ -278,6 +314,7 @@ export default function TerminalChatInput({
                 // Clear tab completions if a space is typed
                 if (value.endsWith(' ')) {
                   setTabCompletions([]);
+                  setSelectedCompletion(-1);
                 } else if (tabCompletions.length > 0) {
                   // Update suggestions as user types
                   const words = value.trim().split(/\s+/);
@@ -313,8 +350,13 @@ export default function TerminalChatInput({
           <>
             {tabCompletions?.length > 0 ? (
               <Box flexDirection="column">
-                {tabCompletions.map((completion) => (
-                  <Text key={completion} dimColor>
+                {tabCompletions.map((completion, index) => (
+                  <Text
+                    key={completion}
+                    dimColor={index !== selectedCompletion}
+                    underline={index === selectedCompletion}
+                    backgroundColor={index === selectedCompletion ? "blackBright" : undefined}
+                  >
                     {completion}
                   </Text>
                 ))}
