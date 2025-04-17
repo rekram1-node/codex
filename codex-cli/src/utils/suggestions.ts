@@ -29,7 +29,7 @@ export function getSuggestions(pathPrefix: string): Array<string> {
       .map((item) => {
         const fullPath = path.join(directoryToRead, item);
         const isDirectory = fs.statSync(fullPath).isDirectory();
-        return shortenPath(`${item}${isDirectory ? "/" : ""}`);
+        return shortenPath(`${fullPath}${isDirectory ? "/" : ""}`);
       })
       // TODO should we allow all and do scroll?
       .slice(0, 5); // Limit to top 5 results
