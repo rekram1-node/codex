@@ -581,7 +581,7 @@ export default function TerminalChatInput({
                 selectedSuggestion
                   ? `"${suggestions[selectedSuggestion - 1]}"`
                   : "send a message" +
-                  (isNew ? " or press tab to select a suggestion" : "")
+                    (isNew ? " or press tab to select a suggestion" : "")
               }
               showCursor
               value={input}
@@ -648,7 +648,7 @@ export default function TerminalChatInput({
               </Fragment>
             ))}
           </Text>
-        ) : fsSuggestions?.length > 0 ? (
+        ) : fsSuggestions.length > 0 ? (
           <Box flexDirection="column">
             {fsSuggestions
               .slice(
@@ -680,15 +680,23 @@ export default function TerminalChatInput({
               })}
           </Box>
         ) : (
-          // Default help text
           <Text dimColor>
             send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
             commands | press enter to send
-            {contextLeftPercent < 25 && (
+            {contextLeftPercent > 25 && (
+              <>
+                {" — "}
+                <Text color={contextLeftPercent > 40 ? "green" : "yellow"}>
+                  {Math.round(contextLeftPercent)}% context left
+                </Text>
+              </>
+            )}
+            {contextLeftPercent <= 25 && (
               <>
                 {" — "}
                 <Text color="red">
-                  {Math.round(contextLeftPercent)}% context left
+                  {Math.round(contextLeftPercent)}% context left — send
+                  "/compact" to condense context
                 </Text>
               </>
             )}
