@@ -6,8 +6,10 @@ import type {
 } from "openai/resources/responses/responses.mjs";
 
 import { TerminalChatCommandReview } from "./terminal-chat-command-review.js";
+import TextCompletions from "./terminal-chat-completions.js";
 import { log, isLoggingEnabled } from "../../utils/agent/log.js";
 import { loadConfig } from "../../utils/config.js";
+import { getFileSystemSuggestions } from "../../utils/file-system-suggestions.js";
 import { createInputItem } from "../../utils/input-utils.js";
 import { setSessionId } from "../../utils/session.js";
 import { SLASH_COMMANDS, type SlashCommand } from "../../utils/slash-commands";
@@ -20,7 +22,6 @@ import TextInput from "../vendor/ink-text-input.js";
 import { Box, Text, useApp, useInput, useStdin } from "ink";
 import { fileURLToPath } from "node:url";
 import React, { useCallback, useState, Fragment, useEffect } from "react";
-import { getFileSystemSuggestions } from "src/utils/file-system-suggestions.js";
 import { useInterval } from "use-interval";
 
 const suggestions = [
@@ -120,8 +121,8 @@ export default function TerminalChatInput({
                 ? len - 1
                 : selectedSlashSuggestion - 1
               : selectedSlashSuggestion >= len - 1
-                ? 0
-                : selectedSlashSuggestion + 1;
+              ? 0
+              : selectedSlashSuggestion + 1;
             setSelectedSlashSuggestion(nextIdx);
             // Autocomplete the command in the input
             const match = matches[nextIdx];
@@ -649,36 +650,11 @@ export default function TerminalChatInput({
             ))}
           </Text>
         ) : fsSuggestions.length > 0 ? (
-          <Box flexDirection="column">
-            {fsSuggestions
-              .slice(
-                Math.max(
-                  0,
-                  Math.min(selectedCompletion - 2, fsSuggestions.length - 5),
-                ),
-                Math.max(
-                  5,
-                  Math.min(selectedCompletion + 3, fsSuggestions.length),
-                ),
-              )
-              .map((completion) => {
-                const originalIndex = fsSuggestions.indexOf(completion);
-                return (
-                  <Text
-                    key={completion}
-                    dimColor={originalIndex !== selectedCompletion}
-                    underline={originalIndex === selectedCompletion}
-                    backgroundColor={
-                      originalIndex === selectedCompletion
-                        ? "blackBright"
-                        : undefined
-                    }
-                  >
-                    {completion}
-                  </Text>
-                );
-              })}
-          </Box>
+          <TextCompletions
+            completions={fsSuggestions}
+            selectedCompletion={selectedCompletion}
+            displayLimit={5}
+          />
         ) : (
           <Text dimColor>
             send q or ctrl+c to exit | send "/clear" to reset | send "/help" for
