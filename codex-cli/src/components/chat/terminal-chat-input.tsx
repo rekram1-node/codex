@@ -223,7 +223,6 @@ export default function TerminalChatInput({
               words[words.length - 1] = selected;
               const newText = words.join(" ");
               setInput(newText);
-              setDraftInput(newText);
               // Force remount of the editor with the new text
               setEditorKey((k) => k + 1);
 
